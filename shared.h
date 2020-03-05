@@ -8,16 +8,36 @@
 
 namespace sandbox {
 
-static int retain_count = 0;
-static int release_count = 0;
+#if DEBUG_RETAIN
+static int cb_count = 0;
+#endif
 
 template <typename T>
 struct shared_ptr {
   struct control_block {
     template<typename U>
-    control_block(U *u_, size_t c_) : t(u_), strong_count(u_) {}
+    control_block(U *u_, size_t c_) : t(u_), strong_count(u_)
+    {
+#if DEBUG_RETAIN
+      printf("CB #%d ctor\n", id = ++cb_count);
+#endif
+    }
 
-    control_block(T *t_, size_t c_) : t(t_), strong_count(c_) {}
+    control_block(T *t_, size_t c_) : t(t_), strong_count(c_) {
+#if DEBUG_RETAIN
+      printf("CB #%d ctor\n", id = ++cb_count);
+#endif
+    }
+
+    ~control_block() {
+#if DEBUG_RETAIN
+      printf("CB #%d dtor\n", id = cb_count--);
+#endif
+    }
+
+#if DEBUG_RETAIN
+    int id;
+#endif
     T *t;
     size_t strong_count;
   };
@@ -52,9 +72,11 @@ struct shared_ptr {
   }
 
   void release(control_block *&cb) {
-    //printf("release %d\n", release_count++);
+#if DEBUG_RETAIN
+    printf("release %d --> %zu\n", cb->id, cb->strong_count);
+#endif
 
-    if (cb->strong_count--)
+    if (--cb->strong_count)
       return;
 
     assert(cb->strong_count == 0 && "releasing, but there are still referers");
@@ -67,9 +89,10 @@ struct shared_ptr {
   }
 
   void retain(control_block *cb) {
-    //printf("retain %d\n", retain_count++);
-
     cb->strong_count++;
+#if DEBUG_RETAIN
+    printf("retain %d --> %zu\n", cb->id, cb->strong_count);
+#endif
   }
 
   T *operator->() {
