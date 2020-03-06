@@ -6,6 +6,8 @@
  * https://www.youtube.com/watch?v=bIhUE5uUFOA
  */
 
+#include "shared.h"
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -17,7 +19,7 @@ void draw(const T &t, std::ostream &out, size_t position);
 class object_t {
 public:
   template <typename T>
-  object_t(T x) : self_(std::make_shared<model<T>>(std::move(x))) {}
+  object_t(T x) : self_(sandbox::make_shared<model<T>>(std::move(x))) {}
 
   friend void draw(const object_t &x, std::ostream &out, size_t position) {
     x.self_->draw_(out, position);
@@ -39,7 +41,7 @@ private:
     T data_;
   };
 
-  std::shared_ptr<const concept_t> self_;
+  sandbox::shared_ptr<const concept_t> self_;
 };
 
 using document_t = std::vector<object_t>;
